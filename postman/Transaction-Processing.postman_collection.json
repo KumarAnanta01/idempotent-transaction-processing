@@ -1,0 +1,362 @@
+{
+  "info": {
+    "_postman_id": "8f2f7b62-5d3a-4c13-9c5f-transaction-processing",
+    "name": "Mphasis - Idempotent Transaction Processing Service",
+    "description": "Postman collection for the local Spring Boot transaction processing assessment project. Set the baseUrl collection variable if the application runs on a different host or port.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Accounts",
+      "item": [
+        {
+          "name": "Create Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts?accountId={{accountId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ],
+              "query": [
+                {
+                  "key": "accountId",
+                  "value": "{{accountId}}"
+                }
+              ]
+            },
+            "description": "Creates an account. The accountId is supplied as a query parameter."
+          }
+        },
+        {
+          "name": "Get Account",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{accountId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "item": [
+        {
+          "name": "Submit Credit Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "postman-credit-001"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-POSTMAN-001\",\n  \"requestId\": \"REQ-POSTMAN-001\",\n  \"idempotencyKey\": \"IDEM-POSTMAN-001\",\n  \"accountId\": \"{{accountId}}\",\n  \"transactionType\": \"CREDIT\",\n  \"amount\": 100.0,\n  \"currency\": \"INR\",\n  \"sequenceNumber\": 1,\n  \"eventTime\": \"2026-11-13T10:00:00\",\n  \"originalTransactionId\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions"
+              ]
+            },
+            "description": "Submit a credit transaction. Create the account first. Background scheduler processes eligible transactions."
+          }
+        },
+        {
+          "name": "Submit Debit Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "postman-debit-001"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-POSTMAN-002\",\n  \"requestId\": \"REQ-POSTMAN-002\",\n  \"idempotencyKey\": \"IDEM-POSTMAN-002\",\n  \"accountId\": \"{{accountId}}\",\n  \"transactionType\": \"DEBIT\",\n  \"amount\": 25.0,\n  \"currency\": \"INR\",\n  \"sequenceNumber\": 2,\n  \"eventTime\": \"2026-11-13T10:01:00\",\n  \"originalTransactionId\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions"
+              ]
+            },
+            "description": "Submit a debit after the credit transaction. Uses sequence number 2."
+          }
+        },
+        {
+          "name": "Submit Reversal Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-POSTMAN-003\",\n  \"requestId\": \"REQ-POSTMAN-003\",\n  \"idempotencyKey\": \"IDEM-POSTMAN-003\",\n  \"accountId\": \"{{accountId}}\",\n  \"transactionType\": \"REVERSAL\",\n  \"amount\": 100.0,\n  \"currency\": \"INR\",\n  \"sequenceNumber\": 3,\n  \"eventTime\": \"2026-11-13T10:02:00\",\n  \"originalTransactionId\": \"TXN-POSTMAN-001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions"
+              ]
+            },
+            "description": "Example reversal of the earlier processed credit. Only reverse a processed original transaction; amount, account and currency must match."
+          }
+        },
+        {
+          "name": "Submit Batch Transactions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactions\": [\n    {\n      \"transactionId\": \"TXN-BATCH-001\",\n      \"requestId\": \"REQ-BATCH-001\",\n      \"idempotencyKey\": \"IDEM-BATCH-001\",\n      \"accountId\": \"{{accountId}}\",\n      \"transactionType\": \"CREDIT\",\n      \"amount\": 200.0,\n      \"currency\": \"INR\",\n      \"sequenceNumber\": 1,\n      \"eventTime\": \"2026-11-13T11:00:00\",\n      \"originalTransactionId\": null\n    },\n    {\n      \"transactionId\": \"TXN-BATCH-002\",\n      \"requestId\": \"REQ-BATCH-002\",\n      \"idempotencyKey\": \"IDEM-BATCH-002\",\n      \"accountId\": \"{{accountId}}\",\n      \"transactionType\": \"DEBIT\",\n      \"amount\": 50.0,\n      \"currency\": \"INR\",\n      \"sequenceNumber\": 2,\n      \"eventTime\": \"2026-11-13T11:01:00\",\n      \"originalTransactionId\": null\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/batch",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "batch"
+              ]
+            },
+            "description": "Submit multiple transaction requests in one API call. Use a fresh account for this example if testing from sequence 1."
+          }
+        },
+        {
+          "name": "Get Transaction By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/{{transactionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "{{transactionId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Trigger Transaction Processing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/process",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "process"
+              ]
+            },
+            "description": "Manually triggers processing of eligible transactions, in addition to the scheduled background processor."
+          }
+        },
+        {
+          "name": "Get Transaction Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "summary"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Documentation",
+      "item": [
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/swagger-ui/index.html",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "swagger-ui",
+                "index.html"
+              ]
+            },
+            "description": "Open the Swagger UI in a browser."
+          }
+        },
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v3/api-docs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v3",
+                "api-docs"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "accountId",
+      "value": "ACC-POSTMAN-001"
+    },
+    {
+      "key": "transactionId",
+      "value": "TXN-POSTMAN-001"
+    }
+  ]
+}
